@@ -1,0 +1,16 @@
+{
+  "default_effect": null,
+  "events": {
+    "activewindowv2": 2,
+    "workspace": 5,
+    "openwindow": 10,
+    "closewindow": 11,
+    "fullscreen": 7,
+    "openlayer": {
+      "default": 1,
+      "args": {
+        "swaync-notification-window": 15
+      }
+    }
+  }
+}

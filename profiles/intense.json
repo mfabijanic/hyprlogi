@@ -1,0 +1,11 @@
+{
+  "default_effect": 1,
+  "events": {
+    "activewindowv2": 12,
+    "workspace": 13,
+    "openwindow": 10,
+    "closewindow": 11,
+    "fullscreen": 7,
+    "focusedmon": 8
+  }
+}
