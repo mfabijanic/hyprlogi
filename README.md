@@ -213,7 +213,9 @@ For robust, automatic startup, running HyprLogi as a systemd user service is the
 
 ## Acknowledgements
 
+-   **[vjeko2404](https://github.com/vjeko2404)**: For LogiOps Logitech MX4 Master configuration ([LogiOps Logitech MX4 Master configuration])(https://github.com/PixlOne/logiops/issues/520)
 -   **Kristóf Marussy**: For the invaluable `logid` fork with haptic feedback support ([kris7t/logiops](https://github.com/kris7t/logiops/tree/haptic-feedback)).
+-   **[davifochi](https://github.com/davifochi)**: For ([davifochi/logiops](https://github.com/davifochi/logiops/tree/haptic-feedback)).
 
 ## License
 
