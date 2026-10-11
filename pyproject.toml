@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hyprlogi"
+version = "0.2.0"
+description = "Haptic feedback on Logitech mice (MX Master 4) for Hyprland events"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [
+  { name = "Matej Fabijanić", email = "root4unix@gmail.com" }
+]
+requires-python = ">=3.10"
+
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Wayland",
+  "Intended Audience :: End Users/Desktop",
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
+
+dependencies = []
+
+[project.optional-dependencies]
+# Only for the logiops backend (logid with the haptic-feedback patch)
+logiops = ["dbus-next>=0.2.3"]
+test = ["pytest>=8"]
+
+[project.urls]
+Homepage = "https://github.com/mfabijanic/hyprlogi"
+Repository = "https://github.com/mfabijanic/hyprlogi"
+Issues = "https://github.com/mfabijanic/hyprlogi/issues"
+
+[project.scripts]
+hyprlogi = "hyprlogi.main:run"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+hyprlogi = [
+  "profiles/*.json",
+]
+
+[tool.setuptools.exclude-package-data]
+"*" = [
+  "__pycache__",
+  "*.pyc",
+]
+
+
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

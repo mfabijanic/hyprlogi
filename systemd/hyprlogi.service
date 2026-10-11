@@ -1,0 +1,14 @@
+[Unit]
+Description=Hyprland Haptic Feedback Service
+After=graphical-session.target hyprland-session.target openlogi-agent.service logid.service
+PartOf=graphical-session.target
+
+[Service]
+# Installed with `uv tool install .` or `pipx install .`
+ExecStart=%h/.local/bin/hyprlogi daemon
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

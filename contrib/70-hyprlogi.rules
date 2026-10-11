@@ -1,0 +1,11 @@
+# HyprLogi udev rule: lets the logged-in user talk HID++ to Logitech devices
+# (needed by the hidpp backend). Not needed when OpenLogi is installed, its
+# 70-openlogi.rules grants the same access.
+#
+#   sudo cp contrib/70-hyprlogi.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload-rules && sudo udevadm trigger
+#
+# USB / Unifying / Bolt receivers
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", TAG+="uaccess"
+# Bluetooth (uhid): match the HID kernel name "bus:046D:PID.iface"
+SUBSYSTEM=="hidraw", KERNELS=="*:046D:*", TAG+="uaccess"

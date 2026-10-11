@@ -2,72 +2,71 @@
 
 # HyprLogi - Haptic Feedback for Hyprland Events
 
-HyprLogi is a Python-based utility that connects Hyprland's event system with Logitech devices supporting haptic feedback (like the MX Master series) via `logid`. It allows you to trigger configurable haptic effects on your mouse for various window manager events, such as changing workspaces, opening applications, or switching focus.
+HyprLogi is a Python-based utility that connects Hyprland's event system with Logitech devices supporting haptic feedback (like the MX Master 4). It allows you to trigger configurable haptic effects on your mouse for various window manager events, such as changing workspaces, opening applications, or switching focus.
 
 This provides a more tactile and immersive desktop experience, giving you physical confirmation for your actions.
 
 ## Features
 
 - **Event-Driven Haptics**: Trigger haptic feedback on any Hyprland event.
-- **Highly Configurable**: Easily map different events to over a dozen haptic effects using a simple JSON configuration file.
-- **Lightweight**: Runs as a small, efficient background script.
-- **Debug Mode**: Includes a verbose mode for easy troubleshooting and event discovery.
+- **Highly Configurable**: Map events (and event arguments) to haptic waveforms in simple JSON profiles.
+- **Works with OpenLogi, LogiOps, or no daemon at all**: see [Backends](#backends).
+- **Robust**: reconnects when the mouse sleeps or Hyprland restarts, reloads its configuration on `SIGHUP`.
+- **Lightweight**: no dependencies for the default backend.
 
 ---
 
-## Prerequisites
+## Backends
 
-Before you begin, ensure you have the following installed and configured:
+| Backend   | How it plays effects | Needs |
+|-----------|----------------------|-------|
+| `hidpp`   | Sends the HID++ `playWaveform` command (feature `0x19B0`) straight to the mouse's `/dev/hidrawN`. Runs side by side with [OpenLogi](https://openlogi.org/) (or Solaar, or nothing). | Write access to the Logitech hidraw node: OpenLogi's udev rule, or [`contrib/70-hyprlogi.rules`](contrib/70-hyprlogi.rules). |
+| `logiops` | Calls `PlayEffect` on the patched `logid` over the system D-Bus. | The [kris7t/logiops `haptic-feedback`](https://github.com/kris7t/logiops/tree/haptic-feedback) fork, the D-Bus policy, and `pip install 'hyprlogi[logiops]'`. |
+| `auto`    | `logiops` when the patched logid is running, otherwise `hidpp`. | |
 
-1.  **Hyprland**: A running and configured Hyprland Wayland compositor.
-2.  **Python**: Python 3.10+ is recommended.
-3.  **LogiOps with Haptic Feedback**: A specific fork of `logid` that supports haptic feedback.
-    - You can find it here: [kris7t/logiops (haptic-feedback branch)](https://github.com/kris7t/logiops/tree/haptic-feedback)
-4.  **Python `dbus-next` library**: To communicate with `logid`.
-5.  **`socat` (Optional but Recommended)**: A powerful utility for discovering Hyprland event names.
+OpenLogi does not (yet) expose haptics through `openlogi api`, so with OpenLogi HyprLogi talks to the mouse
+directly. HID++ pairs replies to requests by *software id*: OpenLogi leases ids from 1 upwards, HyprLogi uses
+15 by default (`hidpp.sw_id`), so the two never see each other's replies.
 
 ## Installation
 
-1.  **Clone the Repository**
-    ```sh
-    git clone https://github.com/mfabijanic/hyprlogi.git
-    cd hyprlogi
-    ```
+```sh
+git clone https://github.com/mfabijanic/hyprlogi.git
+cd hyprlogi
+./install.sh
+```
 
-2.  **Install `logid` with Haptic Support**
-    If you haven't already, you need to build and install the specific `haptic-feedback` fork of `logid`.
+The installer asks for a backend, installs the `hyprlogi` command with `uv` or `pipx`, writes the backend to
+`settings.json` and enables the systemd user service. Manual installation:
 
-    ```sh
-    # Clone the repository
-    git clone https://github.com/kris7t/logiops.git
-    cd logiops
-    git checkout haptic-feedback
+```sh
+uv tool install .                 # or: pipx install .
+uv tool install '.[logiops]'      # with the logiops backend
+```
 
-    # Build and install
-    mkdir build && cd build
-    cmake -DCMAKE_BUILD_TYPE=Release ..
-    make
-    sudo make install
+### hidpp backend (OpenLogi / no daemon)
 
-    # Copy the default configuration
-    sudo cp ../logid.cfg /etc/
-    ```
-    Ensure the `logid` service is running: `sudo systemctl enable --now logid`.
+If OpenLogi is installed, nothing else is needed. Otherwise install the udev rule:
+```sh
+sudo cp contrib/70-hyprlogi.rules /etc/udev/rules.d/
+sudo udevadm control --reload-rules && sudo udevadm trigger
+```
 
-3.  **Configure D-Bus**
-    Copy the D-Bus policy file to allow system-wide communication with `logid`.
-    ```sh
-    # From the hyprlogi project directory
-    sudo cp pizza.pixl.LogiOps.conf /etc/dbus-1/system.d/
-    ```
+### logiops backend
 
-4.  **Install Python Dependencies**
-    It's recommended to use a virtual environment.
-    ```sh
-    python3 -m venv .venv
-    source .venv/bin/activate
-    pip install dbus-next
-    ```
+Build and install the `haptic-feedback` fork of `logid`:
+```sh
+git clone https://github.com/kris7t/logiops.git
+cd logiops
+git checkout haptic-feedback
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make
+sudo make install
+sudo systemctl enable --now logid
+```
+Then allow D-Bus access from the hyprlogi directory: `sudo cp pizza.pixl.LogiOps.conf /etc/dbus-1/system.d/`.
+An example `logid.cfg` for the MX Master 4 is included.
 
 ---
 
@@ -93,11 +92,12 @@ You can switch profiles in two ways:
       "active_profile": "subtle.json"
     }
     ```
+    Apply it with `systemctl --user reload hyprlogi` (no restart needed).
 
 2.  **Use the `--profile` CLI flag (Temporary)**
     This is useful for testing a profile without changing your default setting.
     ```sh
-    python3 hyprlogi.py --profile subtle
+    hyprlogi --profile subtle
     # You can omit the .json extension
     ```
 
@@ -117,21 +117,49 @@ You can switch profiles in two ways:
         "openwindow": 10,
         "closewindow": 11,
         "fullscreen": 7,
-        "openlayer": {             // Example for event with specific arguments
-          "default": 1,            // Default effect for any 'openlayer' event
-          "args": {                // Specific effects for certain arguments
-            "swaync-notification-window": 15 // Effect for 'openlayer>>swaync-notification-window'
+        "openlayer": {
+          "default": 1,
+          "args": {
+            "swaync-notification-window": 14
           }
         }
       }
     }
     ```
+    Here `openlayer` plays effect 1 for any layer, and 14 for `openlayer>>swaync-notification-window`.
     - `default_effect`: (Optional) The effect ID for any unlisted event. `null` disables it.
     - `events`: A dictionary where the key is the **Hyprland event name**.
         - The value can be a direct **haptic effect ID** (an integer).
         - Or, for more granular control, the value can be an **object** with:
             - `"default"`: (Optional) The effect ID to use for this event if no specific argument matches.
             - `"args"`: A dictionary mapping specific **event arguments** (e.g., `"swaync-notification-window"`) to their respective **haptic effect IDs**.
+
+### Settings
+
+All keys of `~/.config/hyprlogi/settings.json` are optional except `active_profile`:
+
+```json
+{
+  "active_profile": "default.json",
+  "backend": "auto",
+  "hidpp": { "device": "auto", "sw_id": 15, "ensure_enabled": false, "intensity": 60 },
+  "cooldown_ms": 40
+}
+```
+
+- `backend`: `auto`, `hidpp` or `logiops` (see [Backends](#backends)); `--backend` overrides it.
+- `hidpp.device`: `auto`, a `/dev/hidrawN` path, or a device name such as `"MX Master 4"`.
+- `hidpp.sw_id`: HID++ software id (1–15) used for requests.
+- `hidpp.ensure_enabled`: turn the mouse's haptics on at `intensity` % if they are off. Off by default, so OpenLogi's setting is respected.
+- `cooldown_ms`: one action emits several events (a workspace switch sends `workspace`, `activewindowv2`, `focusedmon`...). Only the first effect within this window is played.
+
+### Effects
+
+Effects are the mouse's built-in waveform ids. List the ones your mouse supports and try them:
+```sh
+hyprlogi waveforms     # MX Master 4: 0-14
+hyprlogi test 1 4 5
+```
 
 ### How to Discover Hyprland Events
 
@@ -147,71 +175,48 @@ To find the names of events you want to use, you can listen to the Hyprland sock
     activewindowv2>>5c2d140
     openwindow>>5c2d140,1,kitty,
     ```
-3.  Add these event names to your `config.json`.
+3.  Add these event names to your profile.
 
 ---
 
 ## Usage
 
-To run the script, simply execute the Python file from within the project directory (and the virtual environment).
-
 ```sh
-# Activate the virtual environment if you haven't already
-source .venv/bin/activate
-
-# Run the script
-python3 hyprlogi.py
+hyprlogi              # run the daemon (same as 'hyprlogi daemon')
+hyprlogi --debug      # show every event and effect
+hyprlogi devices      # list Logitech HID++ devices and whether they have haptics
+hyprlogi waveforms    # supported waveforms and haptic settings (hidpp)
+hyprlogi test 1 4     # play effects
 ```
 
-For troubleshooting and seeing events in real-time, use the `--debug` flag:
-```sh
-python3 hyprlogi.py --debug
-```
+From a source checkout without installing: `python3 hyprlogi.py ...` (or `./hyprlogi.sh`).
 
 ### Running as a Systemd User Service (Recommended)
 
-For robust, automatic startup, running HyprLogi as a systemd user service is the recommended method. This ensures it starts with your graphical session and restarts automatically if it ever crashes.
+`install.sh` does this for you. Manually:
 
-1.  Create the service file directory if it doesn't exist:
-    ```sh
-    mkdir -p ~/.config/systemd/user/
-    ```
+```sh
+cp systemd/hyprlogi.service ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now hyprlogi.service
+```
 
-2.  Create a new service file: `~/.config/systemd/user/hyprlogi.service`
+The unit runs `~/.local/bin/hyprlogi daemon`. Check it with:
+```sh
+systemctl --user status hyprlogi.service
+journalctl --user -u hyprlogi.service -f
+systemctl --user reload hyprlogi.service   # re-read settings and profile
+```
 
-3.  Paste the following content into the file. **You must replace `/path/to/hyprlogi` with the absolute path to this project's directory.**
+## Development
 
-    ```ini
-    [Unit]
-    Description=Hyprland Haptic Feedback Service
-    After=graphical-session.target hyprland-session.target
-    PartOf=graphical-session.target
-
-    [Service]
-    # IMPORTANT: Replace with the absolute path to your project directory
-    WorkingDirectory=/path/to/hyprlogi
-    # Use the wrapper script to handle virtual environment or uv execution
-    ExecStart=/path/to/hyprlogi/hyprlogi.sh
-    Restart=on-failure
-    RestartSec=5
-
-    [Install]
-    WantedBy=graphical-session.target
-    ```
-
-4.  Enable and start the service:
-    ```sh
-    systemctl --user daemon-reload
-    systemctl --user enable --now hyprlogi.service
-    ```
-
-5.  You can check the status and logs of the service at any time with:
-    ```sh
-    systemctl --user status hyprlogi.service
-    journalctl --user -u hyprlogi.service -f
-    ```
+```sh
+uv run --no-project --with pytest python -m pytest
+```
 
 ## Acknowledgements
+
+-   **[OpenLogi](https://github.com/AprilNEA/OpenLogi)** and **[Solaar](https://github.com/pwr-Solaar/Solaar)**: For reverse-engineering the HID++ haptic feedback feature (`0x19B0`).
 
 -   **[vjeko2404](https://github.com/vjeko2404)**: For LogiOps Logitech MX4 Master configuration ([LogiOps Logitech MX4 Master configuration])(https://github.com/PixlOne/logiops/issues/520)
 -   **Kristóf Marussy**: For the invaluable `logid` fork with haptic feedback support ([kris7t/logiops](https://github.com/kris7t/logiops/tree/haptic-feedback)).

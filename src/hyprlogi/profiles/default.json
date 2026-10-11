@@ -9,7 +9,7 @@
     "openlayer": {
       "default": 1,
       "args": {
-        "swaync-notification-window": 15
+        "swaync-notification-window": 14
       }
     }
   }
