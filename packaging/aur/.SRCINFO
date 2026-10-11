@@ -18,6 +18,6 @@ pkgbase = hyprlogi
 	optdepends = gtk4: profile editor (hyprlogi-gui)
 	optdepends = libadwaita: profile editor (hyprlogi-gui)
 	source = hyprlogi-0.4.0.tar.gz::https://github.com/mfabijanic/hyprlogi/archive/refs/tags/v0.4.0.tar.gz
-	sha256sums = SKIP
+	sha256sums = e06c9ee7cb5c6eb640dc3f5efae53b544a20c68dacc1b3542bff7fae17ab8dd1
 
 pkgname = hyprlogi
