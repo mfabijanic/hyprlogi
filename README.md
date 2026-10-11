@@ -275,7 +275,8 @@ On [Omarchy](https://omarchy.org/) 4, `install.sh` runs `hyprlogi omarchy instal
   Omarchy's layers: a pulse for notifications (`openlayer>>omarchy-notifications`) and the Omarchy menu, and
   none for the OSD, which opens on every volume step.
 - adds **Setup > Haptics** to the Omarchy menu (`~/.config/omarchy/extensions/omarchy-menu.jsonc`, between
-  `// >>> hyprlogi` markers): pause, profile switching, a test, editing settings and restarting the service.
+  `// >>> hyprlogi` markers): pause, profile switching, the profile editor, a test, editing settings and restarting
+  the service.
   Run `hyprlogi omarchy menu` after adding or removing profiles to refresh the list.
 - installs Omarchy hooks: `battery-low` and `theme-set` play an effect through the daemon.
 
@@ -283,7 +284,8 @@ On [Omarchy](https://omarchy.org/) 4, `install.sh` runs `hyprlogi omarchy instal
 
 `hyprlogi omarchy install --plugin` also adds the **bar widget** from
 [hyprlogi-omarchy](https://github.com/mfabijanic/hyprlogi-omarchy) (`omarchy plugin add … --enable`): an icon showing
-whether haptics run or are paused, with a panel for pausing, switching profiles and testing effects.
+whether haptics run or are paused, with a panel for pausing, switching profiles, opening the profile editor and
+testing effects.
 The daemon is a systemd user service under `graphical-session.target`, which Omarchy's uwsm session starts;
 there is nothing to add to `~/.config/hypr/autostart.lua`.
 

@@ -92,3 +92,29 @@ def test_gui_without_gtk_explains_what_to_install(monkeypatch, capsys):
     monkeypatch.setitem(sys.modules, "gi", None)
     assert app.run([]) == 1
     assert "python-gobject gtk4 libadwaita" in capsys.readouterr().err
+
+
+def test_status_json_reports_the_editor(home, monkeypatch, capsys):
+    fake_daemon(monkeypatch, None)
+    monkeypatch.setattr(main, "gui_available", lambda: False)
+    assert json.loads(run_cli(["status", "--json"], capsys))["gui"] is False
+
+
+def test_gui_available_needs_gi_and_both_typelibs(tmp_path, monkeypatch):
+    from hyprlogi import gui
+    monkeypatch.setattr(gui, "TYPELIB_DIRS", ())
+    monkeypatch.setenv("GI_TYPELIB_PATH", str(tmp_path))
+    monkeypatch.setattr(gui.importlib.util, "find_spec", lambda name: object())
+    assert gui.available() is False
+    (tmp_path / "Gtk-4.0.typelib").touch()
+    assert gui.available() is False
+    (tmp_path / "Adw-1.typelib").touch()
+    assert gui.available() is True
+    monkeypatch.setattr(gui.importlib.util, "find_spec", lambda name: None)
+    assert gui.available() is False
+
+
+def test_hyprlogi_gui_profile_option():
+    from hyprlogi.gui import app
+    assert app.parse_args(["--profile", "subtle"]).profile == "subtle"
+    assert main.parse_args(["gui", "-p", "subtle"]).profile == "subtle"

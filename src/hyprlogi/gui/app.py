@@ -10,7 +10,18 @@ MISSING = ("The HyprLogi profile editor needs GTK 4 and libadwaita for Python:\n
            "  sudo pacman -S python-gobject gtk4 libadwaita")
 
 
-def run(argv=None):
+def parse_args(argv):
+    import argparse
+    parser = argparse.ArgumentParser(prog="hyprlogi-gui", description="HyprLogi profile editor.")
+    parser.add_argument("--profile", "-p", help="Open this profile instead of the active one.")
+    return parser.parse_args(argv)
+
+
+def run(argv=None, profile=None):
+    """Starts the editor. Without argv (the hyprlogi-gui script) the command line is parsed here."""
+    if argv is None:
+        profile = parse_args(sys.argv[1:]).profile
+        argv = sys.argv[:1]
     try:
         import gi
         gi.require_version("Gtk", "4.0")
@@ -29,10 +40,10 @@ def run(argv=None):
     app = Adw.Application(application_id=APP_ID)
 
     def activate(application):
-        window = application.get_active_window() or Window(application=application)
+        window = application.get_active_window() or Window(application=application, profile=profile)
         window.present()
     app.connect("activate", activate)
-    return app.run(argv if argv is not None else sys.argv[:1])
+    return app.run(argv)
 
 
 if __name__ == "__main__":

@@ -59,3 +59,10 @@ def test_profile_checked_condition_matches_settings_file(block, tmp_path):
     for key, expected in (("omarchy", 0), ("default", 1)):
         cond = menu[f"setup.hyprlogi.profile.{key}"]["checked"].replace('"$HOME/.config/hyprlogi/settings.json"', str(settings))
         assert subprocess.run(["bash", "-c", cond]).returncode == expected
+
+
+def test_menu_has_the_profile_editor(block, monkeypatch):
+    menu = parse(omarchy.update_menu_text("", block))
+    assert menu["setup.hyprlogi.editor"]["action"].endswith("hyprlogi-gui")
+    monkeypatch.setattr(omarchy.shutil, "which", lambda name: None)
+    assert omarchy.editor_command() == "hyprlogi-gui"

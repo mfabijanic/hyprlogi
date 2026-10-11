@@ -36,7 +36,7 @@ class EffectChoices:
 
 
 class Window(Adw.ApplicationWindow):
-    def __init__(self, **kwargs):
+    def __init__(self, profile=None, **kwargs):
         super().__init__(title="HyprLogi", default_width=1000, default_height=720, **kwargs)
         config.setup_default_config()
         self.doc = None
@@ -54,7 +54,14 @@ class Window(Adw.ApplicationWindow):
         split.set_content(self._build_content())
 
         self.connect("close-request", self._on_close_request)
-        self._reload_profiles(select=model.active_profile_name())
+        start = model.active_profile_name()
+        if profile:
+            profile = profile.removesuffix(".json")
+            if profile in model.profile_names():
+                start = profile
+            else:
+                GLib.idle_add(self._toast, f"No profile named “{profile}”; showing the active one")
+        self._reload_profiles(select=start)
         self._refresh_status()
         GLib.timeout_add_seconds(STATUS_INTERVAL_SEC, self._refresh_status)
         daemon.call({"cmd": "waveforms"}, self._on_waveforms)

@@ -56,6 +56,11 @@ def hyprlogi_command():
     return f"{shlex.quote(sys.executable)} -m hyprlogi"
 
 
+def editor_command():
+    """Starts the profile editor as an app of the session, like Omarchy's own launchers."""
+    return "uwsm-app -- hyprlogi-gui" if shutil.which("uwsm-app") else "hyprlogi-gui"
+
+
 def menu_entries(profiles, command):
     """Returns the (id, entry) pairs of the Setup > Haptics menu."""
     settings_path = str(SETTINGS_FILE).replace(str(Path.home()), "$HOME", 1)
@@ -77,6 +82,9 @@ def menu_entries(profiles, command):
             "action": f"{command} profile set {shlex.quote(stem)}",
         }))
     entries += [
+        (f"{MENU_ROOT}.editor", {"icon": "󰏫", "label": "Profile editor",
+                                 "description": "Edit events, effects and profiles",
+                                 "action": editor_command()}),
         (f"{MENU_ROOT}.test", {"icon": "󰍽", "label": "Test effects",
                                "action": f"{command} play {TEST_EFFECTS}"}),
         (f"{MENU_ROOT}.edit", {"icon": "", "label": "Edit settings",

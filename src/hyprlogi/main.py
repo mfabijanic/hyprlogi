@@ -30,6 +30,7 @@ from hyprlogi.config import (
     effect_names, list_profiles, load_config, load_settings, set_active_profile, setup_default_config,
 )
 from hyprlogi.dispatcher import Dispatcher
+from hyprlogi.gui import available as gui_available
 from hyprlogi.hyprland import hyprland_listener
 
 PLAY_GAP = 0.6
@@ -242,6 +243,7 @@ async def status_data():
         "paused": control.is_paused(),
         "profile": profile_name(load_settings().get("active_profile")),
         "profiles": [profile_name(f) for f in list_profiles()],
+        "gui": gui_available(),
     }
     if reply:
         data["profile"] = profile_name(reply.get("profile"))
@@ -334,7 +336,7 @@ async def omarchy_integration(args):
 
 def gui(args):
     from hyprlogi.gui.app import run as run_gui
-    sys.exit(run_gui([sys.argv[0]]))
+    sys.exit(run_gui([sys.argv[0]], profile=args.profile))
 
 
 async def main(args):

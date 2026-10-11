@@ -1,6 +1,6 @@
 pkgbase = hyprlogi
 	pkgdesc = Haptic feedback on Logitech mice (MX Master 4) for Hyprland events
-	pkgver = 0.4.0
+	pkgver = 0.4.1
 	pkgrel = 1
 	url = https://github.com/mfabijanic/hyprlogi
 	install = hyprlogi.install
@@ -17,7 +17,7 @@ pkgbase = hyprlogi
 	optdepends = python-gobject: profile editor (hyprlogi-gui)
 	optdepends = gtk4: profile editor (hyprlogi-gui)
 	optdepends = libadwaita: profile editor (hyprlogi-gui)
-	source = hyprlogi-0.4.0.tar.gz::https://github.com/mfabijanic/hyprlogi/archive/refs/tags/v0.4.0.tar.gz
-	sha256sums = e06c9ee7cb5c6eb640dc3f5efae53b544a20c68dacc1b3542bff7fae17ab8dd1
+	source = hyprlogi-0.4.1.tar.gz::https://github.com/mfabijanic/hyprlogi/archive/refs/tags/v0.4.1.tar.gz
+	sha256sums = SKIP
 
 pkgname = hyprlogi
