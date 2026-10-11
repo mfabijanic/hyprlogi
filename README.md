@@ -48,8 +48,9 @@ hyprlogi omarchy install        # Omarchy only: menu, hooks, profile (add --plug
 ```
 
 The package installs the systemd user unit and a udev rule; it does not touch your home directory, so the last
-two commands are yours to run. Each release also has a prebuilt package for `sudo pacman -U <url>`; it is built
-for the Python of its day (see the release notes). An AUR package will follow.
+two commands are yours to run. Each release also has a prebuilt package, built for the Python of its day (see the
+release notes). Download it first and install the local file: the packages are not GPG-signed, and pacman refuses
+unsigned packages given as a URL. An AUR package will follow.
 
 ### Remove
 
