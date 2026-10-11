@@ -1,7 +1,7 @@
 # Maintainer: Matej Fabijanić <root4unix at gmail dot com>
 
 pkgname=hyprlogi
-pkgver=0.2.0
+pkgver=0.3.0
 pkgrel=1
 pkgdesc="Haptic feedback on Logitech mice (MX Master 4) for Hyprland events"
 arch=('any')

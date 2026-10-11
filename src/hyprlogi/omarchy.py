@@ -155,6 +155,20 @@ def uninstall_hooks():
             print(f"Removed {hook} hook: {target}")
 
 
+PLUGIN_URL = "https://github.com/mfabijanic/hyprlogi-omarchy.git"
+PLUGIN_ID = "mfabijanic.hyprlogi"
+
+
+def install_plugin():
+    """Adds and enables the HyprLogi bar widget from git."""
+    if not is_omarchy():
+        raise ValueError("the bar widget needs the Omarchy shell ('omarchy' command not found)")
+    if (Path.home() / ".config" / "omarchy" / "plugins" / PLUGIN_ID).exists():
+        print(f"Bar widget {PLUGIN_ID} is already installed (update it with 'omarchy plugin update {PLUGIN_ID}').")
+        return
+    subprocess.run(["omarchy", "plugin", "add", PLUGIN_URL, "--enable", "--yes"], check=True)
+
+
 def install(menu=True, hooks=True):
     """Sets up the Omarchy integration; returns True if the active profile changed."""
     command = hyprlogi_command()

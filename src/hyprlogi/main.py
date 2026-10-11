@@ -65,16 +65,19 @@ def parse_args(argv=None):
     p = commands.add_parser('profile', parents=[common], help="List, show or set the active profile.")
     p.add_argument('action', nargs='?', default='list', choices=('list', 'get', 'set'))
     p.add_argument('name', nargs='?')
+    p.add_argument('--json', action='store_true', help="Print the profile list as JSON.")
     commands.add_parser('pause', parents=[common], help="Pause haptic feedback.")
     commands.add_parser('resume', parents=[common], help="Resume haptic feedback.")
     commands.add_parser('toggle', parents=[common], help="Pause or resume haptic feedback.")
     p = commands.add_parser('status', parents=[common], help="Show the daemon state.")
     p.add_argument('--paused', action='store_true', help="Print nothing; exit 0 only if paused.")
+    p.add_argument('--json', action='store_true', help="Print the state as JSON (exit 0 even if not running).")
     commands.add_parser('waveforms', parents=[common], help="Show the waveforms the device supports.")
     commands.add_parser('devices', parents=[common], help="List Logitech HID++ devices.")
     p = commands.add_parser('omarchy', parents=[common], help="Set up or remove the Omarchy integration.")
     p.add_argument('action', choices=('install', 'uninstall', 'menu'))
     p.add_argument('--no-hooks', action='store_true', help="Do not install the battery-low and theme-set hooks.")
+    p.add_argument('--plugin', action='store_true', help="Also add the HyprLogi bar widget (hyprlogi-omarchy).")
 
     args = parser.parse_args(argv)
     for name, default in (('debug', False), ('profile', None), ('backend', None)):
@@ -194,18 +197,24 @@ async def notify_daemon():
         print(f"Daemon now uses {reply['profile']}")
 
 
+def profile_name(filename):
+    return filename.removesuffix(".json") if filename else filename
+
+
 async def profile(args):
     setup_default_config()
-    active = load_settings().get("active_profile")
+    active = profile_name(load_settings().get("active_profile"))
     if args.action == 'get':
-        print(active.removesuffix(".json"))
+        print(active)
     elif args.action == 'set':
         filename = set_active_profile(args.name)
         print(f"Active profile: {filename}")
         await notify_daemon()
+    elif args.json:
+        print(json.dumps({"active": active, "profiles": [profile_name(f) for f in list_profiles()]}))
     else:
-        for filename in list_profiles():
-            print(f"{'*' if filename == active else ' '} {filename.removesuffix('.json')}")
+        for name in map(profile_name, list_profiles()):
+            print(f"{'*' if name == active else ' '} {name}")
 
 
 async def set_paused(args):
@@ -214,19 +223,39 @@ async def set_paused(args):
     print("Haptics paused" if paused else "Haptics resumed")
 
 
+async def status_data():
+    """The daemon state as one dict; profile names have no .json suffix."""
+    setup_default_config()
+    reply = await control.request({"cmd": "status"})
+    data = {
+        "version": __version__,
+        "running": reply is not None,
+        "paused": control.is_paused(),
+        "profile": profile_name(load_settings().get("active_profile")),
+        "profiles": [profile_name(f) for f in list_profiles()],
+    }
+    if reply:
+        data["profile"] = profile_name(reply.get("profile"))
+        for key in ("backend", "device"):
+            if key in reply:
+                data[key] = reply[key]
+    return data
+
+
 async def status(args):
     if args.paused:
         sys.exit(0 if control.is_paused() else 1)
-    reply = await control.request({"cmd": "status"})
-    if reply is None:
-        print("Daemon:  not running")
-        print(f"Paused:  {'yes' if control.is_paused() else 'no'}")
-        sys.exit(3)
-    print("Daemon:  running")
+    data = await status_data()
+    if args.json:
+        print(json.dumps(data))
+        return
+    print(f"Daemon:  {'running' if data['running'] else 'not running'}")
     for key in ("profile", "backend", "device"):
-        if key in reply:
-            print(f"{key.capitalize() + ':':<9}{reply[key]}")
-    print(f"Paused:  {'yes' if reply['paused'] else 'no'}")
+        if key in data:
+            print(f"{key.capitalize() + ':':<9}{data[key]}")
+    print(f"Paused:  {'yes' if data['paused'] else 'no'}")
+    if not data["running"]:
+        sys.exit(3)
 
 
 async def show_waveforms(args):
@@ -274,6 +303,8 @@ async def omarchy_integration(args):
         return
     if omarchy.install(hooks=not args.no_hooks):
         await notify_daemon()
+    if args.plugin:
+        omarchy.install_plugin()
 
 
 async def main(args):

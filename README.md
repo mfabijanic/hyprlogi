@@ -207,6 +207,7 @@ hyprlogi profile                # list profiles (* = active)
 hyprlogi profile set subtle     # switch profile, the daemon picks it up immediately
 hyprlogi pause | resume | toggle
 hyprlogi status                 # daemon, profile, backend, device, paused
+hyprlogi status --json          # the same for scripts and the bar widget (exit 0 even when stopped)
 ```
 
 `play` reuses the daemon's connection to the mouse (over `$XDG_RUNTIME_DIR/hyprlogi/control.sock`) and plays
@@ -245,6 +246,10 @@ On [Omarchy](https://omarchy.org/) 4, `install.sh` runs `hyprlogi omarchy instal
 - installs Omarchy hooks: `battery-low` and `theme-set` play an effect through the daemon.
 
 `hyprlogi omarchy install --no-hooks` skips the hooks, `hyprlogi omarchy uninstall` removes the menu and hooks.
+
+`hyprlogi omarchy install --plugin` also adds the **bar widget** from
+[hyprlogi-omarchy](https://github.com/mfabijanic/hyprlogi-omarchy) (`omarchy plugin add … --enable`): an icon showing
+whether haptics run or are paused, with a panel for pausing, switching profiles and testing effects.
 The daemon is a systemd user service under `graphical-session.target`, which Omarchy's uwsm session starts;
 there is nothing to add to `~/.config/hypr/autostart.lua`.
 
@@ -259,7 +264,7 @@ uv run --no-project --with pytest python -m pytest
 The AUR package lives in [`packaging/aur/`](packaging/aur/). For a new version:
 
 1. Bump the version in `pyproject.toml`, `src/hyprlogi/__init__.py` and `packaging/aur/PKGBUILD` (reset `pkgrel=1`).
-2. Tag and push: `git tag v0.2.0 && git push origin main v0.2.0`.
+2. Tag and push: `git tag vX.Y.Z && git push origin main vX.Y.Z`.
 3. In `packaging/aur/`: `updpkgsums`, `makepkg -fc` (builds and runs the tests), `namcap PKGBUILD *.pkg.tar.zst`,
    then `makepkg --printsrcinfo > .SRCINFO`.
 4. Copy `PKGBUILD`, `.SRCINFO` and `hyprlogi.install` into the AUR repository

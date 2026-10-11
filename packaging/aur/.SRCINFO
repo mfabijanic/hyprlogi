@@ -1,6 +1,6 @@
 pkgbase = hyprlogi
 	pkgdesc = Haptic feedback on Logitech mice (MX Master 4) for Hyprland events
-	pkgver = 0.2.0
+	pkgver = 0.3.0
 	pkgrel = 1
 	url = https://github.com/mfabijanic/hyprlogi
 	install = hyprlogi.install
@@ -14,7 +14,7 @@ pkgbase = hyprlogi
 	depends = python
 	optdepends = python-dbus-next: logiops backend (logid with the haptic-feedback patch)
 	optdepends = openlogi-bin: Logitech device manager that hyprlogi runs alongside
-	source = hyprlogi-0.2.0.tar.gz::https://github.com/mfabijanic/hyprlogi/archive/refs/tags/v0.2.0.tar.gz
+	source = hyprlogi-0.3.0.tar.gz::https://github.com/mfabijanic/hyprlogi/archive/refs/tags/v0.3.0.tar.gz
 	sha256sums = SKIP
 
 pkgname = hyprlogi
