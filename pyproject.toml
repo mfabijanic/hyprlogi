@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hyprlogi"
-version = "0.3.0"
+version = "0.4.0"
 description = "Haptic feedback on Logitech mice (MX Master 4) for Hyprland events"
 readme = "README.md"
 license = "GPL-3.0-or-later"
@@ -31,6 +31,8 @@ dependencies = []
 [project.optional-dependencies]
 # Only for the logiops backend (logid with the haptic-feedback patch)
 logiops = ["dbus-next>=0.2.3"]
+# Profile editor; on Arch use the python-gobject, gtk4 and libadwaita packages instead
+gui = ["PyGObject>=3.50"]
 test = ["pytest>=8"]
 
 [project.urls]
@@ -40,6 +42,9 @@ Issues = "https://github.com/mfabijanic/hyprlogi/issues"
 
 [project.scripts]
 hyprlogi = "hyprlogi.main:run"
+
+[project.gui-scripts]
+hyprlogi-gui = "hyprlogi.gui.app:run"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

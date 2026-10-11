@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=HyprLogi
+GenericName=Haptic profile editor
+Comment=Edit which haptic effects your Logitech mouse plays for Hyprland events
+Exec=hyprlogi-gui
+Icon=input-mouse
+Terminal=false
+Categories=Settings;HardwareSettings;
+Keywords=haptic;mouse;logitech;hyprland;feedback;
+StartupWMClass=io.github.mfabijanic.HyprLogi

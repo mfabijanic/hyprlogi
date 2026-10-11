@@ -14,6 +14,7 @@ This provides a more tactile and immersive desktop experience, giving you physic
 - **Robust**: reconnects when the mouse sleeps or Hyprland restarts, reloads its configuration on `SIGHUP`.
 - **Omarchy integration**: a Setup > Haptics menu, system hooks and an Omarchy profile (see [Omarchy](#omarchy)).
 - **Scriptable**: `hyprlogi play`, `profile set` and `pause` talk to the running daemon.
+- **Profile editor**: a GTK 4 app to edit profiles, name effects and capture Hyprland events (see [Profile Editor](#profile-editor)).
 - **Lightweight**: no dependencies for the default backend.
 
 ---
@@ -133,6 +134,20 @@ You can switch profiles in two ways:
     # You can omit the .json extension
     ```
 
+### Profile Editor
+
+![HyprLogi profile editor](screenshots/profile-editor.png)
+
+`hyprlogi gui` (or *HyprLogi* in the app launcher) edits profiles without touching JSON. It needs GTK 4 and
+libadwaita for Python: `sudo pacman -S python-gobject gtk4 libadwaita` (Omarchy already has them).
+
+- **Profile**: create, duplicate, rename, delete and activate profiles; pick an effect per event, add rules for an
+  event's first argument (a layer namespace, a window class, a workspace) and play any effect with ▶. Saving the
+  active profile reloads the daemon at once.
+- **Effects**: play every waveform your mouse knows and give it a name. Names are stored in `settings.json`
+  (`effect_names`) and shown in the editor and in `hyprlogi waveforms`.
+- **Listen**: shows Hyprland events as they happen; add one to the profile, or turn its argument into a rule.
+
 ### Creating a New Profile
 
 1.  Copy an existing profile in `~/.config/hyprlogi/profiles/`, for example:
@@ -195,7 +210,7 @@ hyprlogi test 1 4 5
 
 ### How to Discover Hyprland Events
 
-To find the names of events you want to use, you can listen to the Hyprland socket directly using `socat`.
+The easiest way is the **Listen** page of `hyprlogi gui`. Without the GUI, listen to the Hyprland socket with `socat`.
 
 1.  Open a terminal and run:
     ```sh
@@ -225,6 +240,7 @@ hyprlogi profile set subtle     # switch profile, the daemon picks it up immedia
 hyprlogi pause | resume | toggle
 hyprlogi status                 # daemon, profile, backend, device, paused
 hyprlogi status --json          # the same for scripts and the bar widget (exit 0 even when stopped)
+hyprlogi gui                    # profile editor (also: hyprlogi-gui)
 ```
 
 `play` reuses the daemon's connection to the mouse (over `$XDG_RUNTIME_DIR/hyprlogi/control.sock`) and plays

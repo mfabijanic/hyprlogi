@@ -63,3 +63,32 @@ def test_options_after_the_command():
     args = main.parse_args(["omarchy", "install", "--plugin", "--no-hooks", "--debug"])
     assert (args.action, args.plugin, args.no_hooks, args.debug) == ("install", True, True, True)
     assert main.parse_args([]).command == "daemon"
+
+
+def test_daemon_waveforms_command():
+    class Hidpp:
+        name = "hidpp"
+
+        async def _ensure_connected(self):
+            return True
+
+        async def capabilities(self):
+            return [1, 4]
+
+    class LogiOps:
+        name = "logiops"
+
+    daemon = main.Daemon(main.parse_args([]))
+    daemon.settings = {}
+    daemon.backend = Hidpp()
+    assert asyncio.run(daemon.handle_request({"cmd": "waveforms"})) == {"ok": True, "waveforms": [1, 4]}
+    daemon.backend = LogiOps()
+    assert asyncio.run(daemon.handle_request({"cmd": "waveforms"})) == {"ok": True, "waveforms": None}
+
+
+def test_gui_without_gtk_explains_what_to_install(monkeypatch, capsys):
+    import sys
+    from hyprlogi.gui import app
+    monkeypatch.setitem(sys.modules, "gi", None)
+    assert app.run([]) == 1
+    assert "python-gobject gtk4 libadwaita" in capsys.readouterr().err

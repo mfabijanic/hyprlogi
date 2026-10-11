@@ -34,6 +34,8 @@ DEFAULT_SETTINGS = {
     },
     # Events arriving within this window after a played effect are not played
     "cooldown_ms": 40,
+    # Names for waveform ids, set in the profile editor: {"4": "Soft tick"}
+    "effect_names": {},
 }
 
 
@@ -95,15 +97,50 @@ def set_active_profile(name):
     filename = profile_filename(name)
     if not (PROFILES_DIR / filename).exists():
         raise ValueError(f"profile '{filename}' does not exist in {PROFILES_DIR}")
+    settings = _read_settings_file()
+    settings["active_profile"] = filename
+    _write_settings_file(settings)
+    return filename
+
+
+def _read_settings_file():
     try:
         with open(SETTINGS_FILE, 'r') as f:
-            settings = json.load(f)
+            return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
-        settings = {}
-    settings["active_profile"] = filename
-    with open(SETTINGS_FILE, 'w') as f:
+        return {}
+
+
+def _write_settings_file(settings):
+    tmp = SETTINGS_FILE.with_suffix(".json.tmp")
+    with open(tmp, 'w') as f:
         json.dump(settings, f, indent=2)
-    return filename
+        f.write("\n")
+    os.replace(tmp, SETTINGS_FILE)
+
+
+def effect_names():
+    """Returns {effect id: name} from settings.json."""
+    names = load_settings().get("effect_names") or {}
+    result = {}
+    for key, name in names.items():
+        try:
+            result[int(key)] = str(name)
+        except (TypeError, ValueError):
+            continue
+    return result
+
+
+def set_effect_name(effect, name):
+    """Names a waveform id in settings.json; an empty name removes it."""
+    settings = _read_settings_file()
+    names = settings.setdefault("effect_names", {})
+    name = (name or "").strip()
+    if name:
+        names[str(int(effect))] = name
+    else:
+        names.pop(str(int(effect)), None)
+    _write_settings_file(settings)
 
 
 def load_profile(name):

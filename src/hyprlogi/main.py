@@ -26,7 +26,9 @@ from hyprlogi import __version__, control, omarchy
 from hyprlogi.backends import BACKENDS, create_backend
 from hyprlogi.backends.hidpp import DeviceNotFound, HidppBackend, list_hidraw
 from hyprlogi.backends.logiops import LogiOpsUnavailable
-from hyprlogi.config import list_profiles, load_config, load_settings, set_active_profile, setup_default_config
+from hyprlogi.config import (
+    effect_names, list_profiles, load_config, load_settings, set_active_profile, setup_default_config,
+)
 from hyprlogi.dispatcher import Dispatcher
 from hyprlogi.hyprland import hyprland_listener
 
@@ -74,6 +76,7 @@ def parse_args(argv=None):
     p.add_argument('--json', action='store_true', help="Print the state as JSON (exit 0 even if not running).")
     commands.add_parser('waveforms', parents=[common], help="Show the waveforms the device supports.")
     commands.add_parser('devices', parents=[common], help="List Logitech HID++ devices.")
+    commands.add_parser('gui', parents=[common], help="Open the profile editor (needs GTK 4 and libadwaita).")
     p = commands.add_parser('omarchy', parents=[common], help="Set up or remove the Omarchy integration.")
     p.add_argument('action', choices=('install', 'uninstall', 'menu'))
     p.add_argument('--no-hooks', action='store_true', help="Do not install the battery-low and theme-set hooks.")
@@ -121,6 +124,12 @@ class Daemon:
         if cmd == "reload":
             self.reload(drop_override=True)
             return {"ok": True, "profile": self.settings.get("active_profile")}
+        if cmd == "waveforms":
+            # Only the hidpp backend can ask the device; the GUI falls back to 0-14
+            capabilities = getattr(self.backend, "capabilities", None)
+            if capabilities is None or not await self.backend._ensure_connected():
+                return {"ok": True, "waveforms": None}
+            return {"ok": True, "waveforms": await capabilities()}
         if cmd == "play":
             effects = [effect_id(e) for e in req["effects"]]
             if control.is_paused():
@@ -259,19 +268,35 @@ async def status(args):
 
 
 async def show_waveforms(args):
-    """Prints the waveforms and haptic settings the device reports."""
-    settings, _ = load_config(args.profile)
-    backend = HidppBackend(settings.get("hidpp"))
-    await backend.open(strict=True)
-    try:
-        enabled, intensity = await backend.configuration()
-        waveforms = await backend.capabilities()
-        print(f"{backend.info.name} ({backend.info.path})")
-        print(f"  haptics:   {'on' if enabled else 'off'}, intensity {intensity}%")
-        print(f"  waveforms: {' '.join(map(str, waveforms)) or '-'}")
-        print("  (ids outside this list may still play; check with 'hyprlogi test ID')")
-    finally:
-        await backend.close()
+    """Prints the waveforms the device supports, with their names."""
+    names = effect_names()
+    # A running daemon owns the device connection (and the HID++ software id)
+    reply = await control.request({"cmd": "waveforms"})
+    if reply is not None and not reply.get("ok"):
+        logging.debug("Daemon cannot list waveforms (%s), asking the device directly", reply.get("error"))
+        reply = None
+    if reply is not None:
+        waveforms = reply.get("waveforms")
+        if waveforms is None:
+            raise ValueError("the daemon's backend cannot list waveforms (hidpp only)")
+        header = None
+    else:
+        settings, _ = load_config(args.profile)
+        backend = HidppBackend(settings.get("hidpp"))
+        await backend.open(strict=True)
+        try:
+            enabled, intensity = await backend.configuration()
+            waveforms = await backend.capabilities()
+            header = (f"{backend.info.name} ({backend.info.path})\n"
+                      f"  haptics: {'on' if enabled else 'off'}, intensity {intensity}%")
+        finally:
+            await backend.close()
+    if header:
+        print(header)
+    print("Waveforms:")
+    for effect in waveforms:
+        print(f"  {effect:>3}  {names.get(effect, '')}".rstrip())
+    print("(ids outside this list may still play; check with 'hyprlogi test ID')")
 
 
 async def show_devices(args):
@@ -307,6 +332,11 @@ async def omarchy_integration(args):
         omarchy.install_plugin()
 
 
+def gui(args):
+    from hyprlogi.gui.app import run as run_gui
+    sys.exit(run_gui([sys.argv[0]]))
+
+
 async def main(args):
     if args.command == 'daemon':
         await Daemon(args).run()
@@ -321,6 +351,8 @@ async def main(args):
 
 def run(argv=None):
     args = parse_args(argv)
+    if args.command == 'gui':
+        gui(args)
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO,
                         format='%(levelname)s: %(message)s')
     try:
