@@ -14,7 +14,7 @@ optdepends=('python-dbus-next: logiops backend (logid with the haptic-feedback p
             'openlogi-bin: Logitech device manager that hyprlogi runs alongside')
 install=hyprlogi.install
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('SKIP')
+sha256sums=('7dfa9cf4801fa6972351cba831a0261507f7cd9ad5a62913e35a495494bdd823')
 
 build() {
   cd "$pkgname-$pkgver"
