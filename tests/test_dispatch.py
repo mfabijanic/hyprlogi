@@ -60,3 +60,10 @@ def test_burst_plays_only_first_effect_and_dedupes_focus():
 
     asyncio.run(scenario())
     assert backend.played == [5, 2]
+
+
+def test_paused_dispatcher_plays_nothing():
+    backend = Recorder()
+    d = Dispatcher(backend, PROFILE, paused=lambda: True)
+    asyncio.run(d.handle("workspace", ["1"]))
+    assert backend.played == []

@@ -80,19 +80,44 @@ def load_settings():
         return copy.deepcopy(DEFAULT_SETTINGS)
 
 
-def load_profile(profile_filename):
+def profile_filename(name):
+    """'subtle' -> 'subtle.json'."""
+    return name if name.endswith('.json') else f"{name}.json"
+
+
+def list_profiles():
+    """Returns the profile filenames in PROFILES_DIR."""
+    return sorted(p.name for p in PROFILES_DIR.glob("*.json"))
+
+
+def set_active_profile(name):
+    """Makes `name` the active profile in settings.json; returns its filename."""
+    filename = profile_filename(name)
+    if not (PROFILES_DIR / filename).exists():
+        raise ValueError(f"profile '{filename}' does not exist in {PROFILES_DIR}")
+    try:
+        with open(SETTINGS_FILE, 'r') as f:
+            settings = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        settings = {}
+    settings["active_profile"] = filename
+    with open(SETTINGS_FILE, 'w') as f:
+        json.dump(settings, f, indent=2)
+    return filename
+
+
+def load_profile(name):
     """Loads a profile from PROFILES_DIR; returns an empty profile on error."""
-    if not profile_filename:
+    if not name:
         logging.error("No active profile is defined in %s.", SETTINGS_FILE)
         return {"events": {}}
-    if not profile_filename.endswith('.json'):
-        profile_filename = f"{profile_filename}.json"
+    filename = profile_filename(name)
 
-    profile_path = PROFILES_DIR / profile_filename
+    profile_path = PROFILES_DIR / filename
     try:
         with open(profile_path, 'r') as f:
             profile = json.load(f)
-        logging.info("Profile '%s' loaded successfully.", profile_filename)
+        logging.info("Profile '%s' loaded successfully.", filename)
         return profile
     except FileNotFoundError:
         logging.error("Profile file not found: %s", profile_path)
@@ -102,7 +127,10 @@ def load_profile(profile_filename):
 
 
 def load_config(profile_override=None, backend_override=None):
-    """Returns (settings, profile), applying command-line overrides."""
+    """Returns (settings, profile), applying command-line overrides.
+
+    settings["active_profile"] names the profile actually loaded.
+    """
     setup_default_config()
     settings = load_settings()
     if backend_override:
@@ -110,12 +138,11 @@ def load_config(profile_override=None, backend_override=None):
 
     if profile_override:
         logging.info("Using profile from command-line argument: %s", profile_override)
-        profile_filename = profile_override
+        settings["active_profile"] = profile_filename(profile_override)
     else:
-        profile_filename = settings.get("active_profile")
-        logging.info("Using active profile from settings: %s", profile_filename)
+        logging.info("Using active profile from settings: %s", settings.get("active_profile"))
 
-    return settings, load_profile(profile_filename)
+    return settings, load_profile(settings.get("active_profile"))
 
 
 def resolve_effect(profile, cmd, args):

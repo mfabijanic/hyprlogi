@@ -147,6 +147,10 @@ main() {
     echo "  - install the 'hyprlogi' command with uv or pipx,"
     echo "  - set the backend in ~/.config/hyprlogi/settings.json,"
     echo "  - install and enable the hyprlogi systemd user service."
+    if command -v omarchy &> /dev/null; then
+        echo "  - Omarchy: Setup > Haptics menu, battery-low and theme-set hooks,"
+        echo "    and the 'omarchy' profile (unless you already picked another one)."
+    fi
     echo ""
     read -p "Do you want to proceed with the installation? (y/N): " confirm
     if [[ ! "$confirm" =~ ^[yY](es)?$ ]]; then
@@ -197,7 +201,14 @@ with open(path, "w") as f:
 EOF
     print_success "Backend set to '$BACKEND' in $settings."
 
-    # --- 4. Setup Systemd User Service ---
+    # --- 4. Omarchy integration ---
+    if command -v omarchy &> /dev/null; then
+        print_info "Setting up the Omarchy integration..."
+        "$HOME/.local/bin/hyprlogi" omarchy install
+        print_success "Omarchy integration installed (Setup > Haptics in the Omarchy menu)."
+    fi
+
+    # --- 5. Setup Systemd User Service ---
     print_info "Setting up systemd user service for HyprLogi..."
     local service_dir="$HOME/.config/systemd/user"
     mkdir -p "$service_dir"

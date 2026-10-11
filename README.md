@@ -12,6 +12,8 @@ This provides a more tactile and immersive desktop experience, giving you physic
 - **Highly Configurable**: Map events (and event arguments) to haptic waveforms in simple JSON profiles.
 - **Works with OpenLogi, LogiOps, or no daemon at all**: see [Backends](#backends).
 - **Robust**: reconnects when the mouse sleeps or Hyprland restarts, reloads its configuration on `SIGHUP`.
+- **Omarchy integration**: a Setup > Haptics menu, system hooks and an Omarchy profile (see [Omarchy](#omarchy)).
+- **Scriptable**: `hyprlogi play`, `profile set` and `pause` talk to the running daemon.
 - **Lightweight**: no dependencies for the default backend.
 
 ---
@@ -186,8 +188,16 @@ hyprlogi              # run the daemon (same as 'hyprlogi daemon')
 hyprlogi --debug      # show every event and effect
 hyprlogi devices      # list Logitech HID++ devices and whether they have haptics
 hyprlogi waveforms    # supported waveforms and haptic settings (hidpp)
-hyprlogi test 1 4     # play effects
+hyprlogi test 1 4     # play effects directly on the device
+hyprlogi play 1 4     # play effects through the running daemon (for scripts and hooks)
+hyprlogi profile                # list profiles (* = active)
+hyprlogi profile set subtle     # switch profile, the daemon picks it up immediately
+hyprlogi pause | resume | toggle
+hyprlogi status                 # daemon, profile, backend, device, paused
 ```
+
+`play` reuses the daemon's connection to the mouse (over `$XDG_RUNTIME_DIR/hyprlogi/control.sock`) and plays
+directly when no daemon runs. Pausing silences events and `play` alike, and lasts until `resume` or reboot.
 
 From a source checkout without installing: `python3 hyprlogi.py ...` (or `./hyprlogi.sh`).
 
@@ -207,6 +217,22 @@ systemctl --user status hyprlogi.service
 journalctl --user -u hyprlogi.service -f
 systemctl --user reload hyprlogi.service   # re-read settings and profile
 ```
+
+## Omarchy
+
+On [Omarchy](https://omarchy.org/) 4, `install.sh` runs `hyprlogi omarchy install`, which:
+
+- switches to the `omarchy` profile (unless you already chose a profile other than `default`). It knows
+  Omarchy's layers: a pulse for notifications (`openlayer>>omarchy-notifications`) and the Omarchy menu, and
+  none for the OSD, which opens on every volume step.
+- adds **Setup > Haptics** to the Omarchy menu (`~/.config/omarchy/extensions/omarchy-menu.jsonc`, between
+  `// >>> hyprlogi` markers): pause, profile switching, a test, editing settings and restarting the service.
+  Run `hyprlogi omarchy menu` after adding or removing profiles to refresh the list.
+- installs Omarchy hooks: `battery-low` and `theme-set` play an effect through the daemon.
+
+`hyprlogi omarchy install --no-hooks` skips the hooks, `hyprlogi omarchy uninstall` removes the menu and hooks.
+The daemon is a systemd user service under `graphical-session.target`, which Omarchy's uwsm session starts;
+there is nothing to add to `~/.config/hypr/autostart.lua`.
 
 ## Development
 

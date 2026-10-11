@@ -19,8 +19,9 @@ class Dispatcher:
     pulses do not blur into one long buzz.
     """
 
-    def __init__(self, backend, profile, cooldown_ms=40, clock=time.monotonic):
+    def __init__(self, backend, profile, cooldown_ms=40, clock=time.monotonic, paused=lambda: False):
         self.backend = backend
+        self.paused = paused
         self.profile = profile
         self.cooldown = cooldown_ms / 1000
         self.clock = clock
@@ -48,6 +49,6 @@ class Dispatcher:
     async def handle(self, cmd, args):
         logging.debug("Received event: %s -> %s", cmd, ",".join(args))
         effect_id = self.effect_for(cmd, args)
-        if effect_id is not None:
+        if effect_id is not None and not self.paused():
             logging.debug("Event '%s' -> Triggering effect ID: %d", cmd, effect_id)
             await self.backend.play(effect_id)
