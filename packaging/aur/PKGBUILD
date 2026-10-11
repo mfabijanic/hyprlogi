@@ -17,7 +17,7 @@ optdepends=('python-dbus-next: logiops backend (logid with the haptic-feedback p
             'libadwaita: profile editor (hyprlogi-gui)')
 install=hyprlogi.install
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('SKIP')
+sha256sums=('67eef2d3fa061cd5bc4f97ba37413512ec9e1bf94f9422094bfbbbd5fd92b26d')
 
 build() {
   cd "$pkgname-$pkgver"
