@@ -212,7 +212,8 @@ EOF
     print_info "Setting up systemd user service for HyprLogi..."
     local service_dir="$HOME/.config/systemd/user"
     mkdir -p "$service_dir"
-    cp "$SCRIPT_DIR/systemd/hyprlogi.service" "$service_dir/hyprlogi.service"
+    sed "s|^ExecStart=/usr/bin/hyprlogi|ExecStart=$HOME/.local/bin/hyprlogi|" \
+        "$SCRIPT_DIR/systemd/hyprlogi.service" > "$service_dir/hyprlogi.service"
 
     systemctl --user daemon-reload
     systemctl --user enable --now hyprlogi.service

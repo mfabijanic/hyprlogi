@@ -1,0 +1,37 @@
+# Maintainer: Matej Fabijanić <root4unix at gmail dot com>
+
+pkgname=hyprlogi
+pkgver=0.2.0
+pkgrel=1
+pkgdesc="Haptic feedback on Logitech mice (MX Master 4) for Hyprland events"
+arch=('any')
+url="https://github.com/mfabijanic/hyprlogi"
+license=('GPL-3.0-or-later')
+depends=('python')
+makedepends=('python-build' 'python-installer' 'python-setuptools' 'python-wheel')
+checkdepends=('python-pytest')
+optdepends=('python-dbus-next: logiops backend (logid with the haptic-feedback patch)'
+            'openlogi-bin: Logitech device manager that hyprlogi runs alongside')
+install=hyprlogi.install
+source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+  cd "$pkgname-$pkgver"
+  python -m build --wheel --no-isolation
+}
+
+check() {
+  cd "$pkgname-$pkgver"
+  python -m pytest -q
+}
+
+package() {
+  cd "$pkgname-$pkgver"
+  python -m installer --destdir="$pkgdir" dist/*.whl
+  install -Dm644 systemd/hyprlogi.service -t "$pkgdir/usr/lib/systemd/user/"
+  install -Dm644 contrib/70-hyprlogi.rules -t "$pkgdir/usr/lib/udev/rules.d/"
+  install -Dm644 README.md -t "$pkgdir/usr/share/doc/$pkgname/"
+  # logiops backend: example logid config and the D-Bus policy it needs
+  install -Dm644 logid.cfg pizza.pixl.LogiOps.conf -t "$pkgdir/usr/share/doc/$pkgname/logiops/"
+}

@@ -4,8 +4,8 @@ After=graphical-session.target hyprland-session.target openlogi-agent.service lo
 PartOf=graphical-session.target
 
 [Service]
-# Installed with `uv tool install .` or `pipx install .`
-ExecStart=%h/.local/bin/hyprlogi daemon
+# install.sh rewrites this path for `uv tool install` / `pipx install` (~/.local/bin)
+ExecStart=/usr/bin/hyprlogi daemon
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=on-failure
 RestartSec=5

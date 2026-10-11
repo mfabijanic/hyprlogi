@@ -32,6 +32,19 @@ directly. HID++ pairs replies to requests by *software id*: OpenLogi leases ids 
 
 ## Installation
 
+### Arch Linux / Omarchy (AUR)
+
+```sh
+yay -S hyprlogi                 # or: omarchy pkg aur add hyprlogi
+systemctl --user enable --now hyprlogi.service
+hyprlogi omarchy install        # Omarchy only: menu, hooks, profile
+```
+
+The package installs the systemd user unit and a udev rule; it does not touch your home directory, so the two
+commands above are yours to run.
+
+### From source
+
 ```sh
 git clone https://github.com/mfabijanic/hyprlogi.git
 cd hyprlogi
@@ -203,15 +216,16 @@ From a source checkout without installing: `python3 hyprlogi.py ...` (or `./hypr
 
 ### Running as a Systemd User Service (Recommended)
 
-`install.sh` does this for you. Manually:
+The AUR package and `install.sh` install the unit for you. For a manual `uv tool install` / `pipx install`,
+point it at `~/.local/bin`:
 
 ```sh
-cp systemd/hyprlogi.service ~/.config/systemd/user/
+sed "s|/usr/bin/hyprlogi|$HOME/.local/bin/hyprlogi|" systemd/hyprlogi.service > ~/.config/systemd/user/hyprlogi.service
 systemctl --user daemon-reload
 systemctl --user enable --now hyprlogi.service
 ```
 
-The unit runs `~/.local/bin/hyprlogi daemon`. Check it with:
+Check it with:
 ```sh
 systemctl --user status hyprlogi.service
 journalctl --user -u hyprlogi.service -f
@@ -239,6 +253,17 @@ there is nothing to add to `~/.config/hypr/autostart.lua`.
 ```sh
 uv run --no-project --with pytest python -m pytest
 ```
+
+### Releasing
+
+The AUR package lives in [`packaging/aur/`](packaging/aur/). For a new version:
+
+1. Bump the version in `pyproject.toml`, `src/hyprlogi/__init__.py` and `packaging/aur/PKGBUILD` (reset `pkgrel=1`).
+2. Tag and push: `git tag v0.2.0 && git push origin main v0.2.0`.
+3. In `packaging/aur/`: `updpkgsums`, `makepkg -fc` (builds and runs the tests), `namcap PKGBUILD *.pkg.tar.zst`,
+   then `makepkg --printsrcinfo > .SRCINFO`.
+4. Copy `PKGBUILD`, `.SRCINFO` and `hyprlogi.install` into the AUR repository
+   (`git clone ssh://aur@aur.archlinux.org/hyprlogi.git`), commit and push.
 
 ## Acknowledgements
 

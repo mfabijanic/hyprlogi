@@ -1,0 +1,23 @@
+post_install() {
+  cat <<'EOF'
+==> Start HyprLogi for your user:
+      systemctl --user enable --now hyprlogi.service
+==> On Omarchy, add the Setup > Haptics menu, hooks and the Omarchy profile:
+      hyprlogi omarchy install
+==> Without OpenLogi, re-plug or wake the mouse (or run 'sudo udevadm trigger')
+    so the new udev rule grants access to it. Check with: hyprlogi devices
+EOF
+}
+
+post_upgrade() {
+  echo "==> Restart HyprLogi to use the new version: systemctl --user restart hyprlogi.service"
+}
+
+pre_remove() {
+  cat <<'EOF'
+==> HyprLogi leaves your files in place. Before removing it (or afterwards by hand):
+      hyprlogi omarchy uninstall          # Omarchy menu entries and hooks
+      systemctl --user disable --now hyprlogi.service
+    Settings and profiles stay in ~/.config/hyprlogi.
+EOF
+}
