@@ -8,7 +8,7 @@ from pathlib import Path
 from gi.repository import Adw, GLib, Gtk
 
 from hyprlogi import config
-from hyprlogi.gui import daemon, model
+from hyprlogi.gui import daemon, model, safe_input
 from hyprlogi.gui.listener import EventListener
 
 STATUS_INTERVAL_SEC = 5
@@ -46,6 +46,7 @@ class Window(Adw.ApplicationWindow):
         self.captured = {}             # (event, first argument) -> [count, args]
         self.listener = EventListener(self._on_event, self._on_listener_stopped)
 
+        safe_input.disable_primary_paste(self.get_display())
         self.toasts = Adw.ToastOverlay()
         self.set_content(self.toasts)
         split = Adw.NavigationSplitView(min_sidebar_width=220, max_sidebar_width=280)
@@ -193,7 +194,7 @@ class Window(Adw.ApplicationWindow):
 
     def _ask_name(self, heading, initial, on_name):
         dialog = Adw.AlertDialog(heading=heading)
-        entry = Gtk.Entry(text=initial, activates_default=True)
+        entry = self._safe(Gtk.Entry(text=initial, activates_default=True))
         dialog.set_extra_child(entry)
         dialog.add_response("cancel", "Cancel")
         dialog.add_response("ok", "OK")
@@ -353,8 +354,9 @@ class Window(Adw.ApplicationWindow):
 
     def _effect_row(self, title, subtitle, effect, on_change):
         choices = self._choices()
-        row = Adw.ComboRow(title=title, subtitle=subtitle or "", model=choices.model(),
-                           selected=choices.index(effect))
+        # The drop-down carries a (disabled) search entry; it gets the same bounded paste
+        row = self._safe(Adw.ComboRow(title=title, subtitle=subtitle or "", model=choices.model(),
+                                      selected=choices.index(effect)))
         row.connect("notify::selected", lambda r, _p: on_change(choices.values[r.get_selected()]))
         return row, choices
 
@@ -432,7 +434,7 @@ class Window(Adw.ApplicationWindow):
                                               lambda arg=arg: self._edit(lambda: doc.remove_arg(event, arg))))
             expander.add_row(rule)
 
-        add_rule = Adw.EntryRow(title=f"Add a rule for a {argument}", show_apply_button=True)
+        add_rule = self._safe(Adw.EntryRow(title=f"Add a rule for a {argument}", show_apply_button=True))
 
         def apply(entry):
             arg = entry.get_text().strip()
@@ -449,7 +451,7 @@ class Window(Adw.ApplicationWindow):
             row = Adw.ActionRow(title=info.name, subtitle=info.description, activatable=True)
             row.connect("activated", lambda _r, name=info.name: self._add_event(name, popover))
             listbox.append(row)
-        custom = Gtk.Entry(placeholder_text="Other event name", hexpand=True)
+        custom = self._safe(Gtk.Entry(placeholder_text="Other event name", hexpand=True))
         custom.connect("activate", lambda e: self._add_event(e.get_text(), popover))
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         box.append(Gtk.ScrolledWindow(child=listbox, min_content_height=360, min_content_width=360,
@@ -502,8 +504,8 @@ class Window(Adw.ApplicationWindow):
             description="Play each waveform your mouse knows and give it a name you will recognise. "
                         "Names are saved in settings.json and shown in the profile editor.")
         for effect in self.waveforms:
-            row = Adw.EntryRow(title=f"Waveform {effect}", text=self.names.get(effect, ""),
-                               show_apply_button=True)
+            row = self._safe(Adw.EntryRow(title=f"Waveform {effect}", text=self.names.get(effect, ""),
+                                          show_apply_button=True))
             row.add_prefix(self._play_button(lambda effect=effect: effect, f"Play waveform {effect}"))
             row.connect("apply", lambda r, effect=effect: self._name_effect(effect, r.get_text()))
             group.add(row)
@@ -598,6 +600,10 @@ class Window(Adw.ApplicationWindow):
             self.status_label.set_text(text)
         daemon.call({"cmd": "status"}, done)
         return GLib.SOURCE_CONTINUE
+
+    def _safe(self, widget):
+        """Every text field goes through here: bounded paste, no primary paste, no text drops."""
+        return safe_input.harden(widget, self._toast)
 
     def _toast(self, text):
         self.toasts.add_toast(Adw.Toast(title=GLib.markup_escape_text(str(text)), timeout=4))

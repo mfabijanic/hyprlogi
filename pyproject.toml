@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hyprlogi"
-version = "0.4.1"
+version = "0.4.2"
 description = "Haptic feedback on Logitech mice (MX Master 4) for Hyprland events"
 readme = "README.md"
 license = "GPL-3.0-or-later"

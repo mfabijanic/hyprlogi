@@ -149,6 +149,9 @@ libadwaita for Python: `sudo pacman -S python-gobject gtk4 libadwaita` (Omarchy 
   (`effect_names`) and shown in the editor and in `hyprlogi waveforms`.
 - **Listen**: shows Hyprland events as they happen; add one to the profile, or turn its argument into a rule.
 
+Text fields take short input, so pasting is capped: at most 1 KiB of text, read within 2 seconds (more, or a
+clipboard that does not answer, is refused). Middle-click paste and dropping text into fields are off.
+
 ### Creating a New Profile
 
 1.  Copy an existing profile in `~/.config/hyprlogi/profiles/`, for example:
