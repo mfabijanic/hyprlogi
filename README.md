@@ -32,16 +32,33 @@ directly. HID++ pairs replies to requests by *software id*: OpenLogi leases ids 
 
 ## Installation
 
-### Arch Linux / Omarchy (AUR)
+### Arch Linux / Omarchy
+
+Build the package from the [latest release](https://github.com/mfabijanic/hyprlogi/releases/latest), so it
+matches your Python:
 
 ```sh
-yay -S hyprlogi                 # or: omarchy pkg aur add hyprlogi
+mkdir -p ~/.cache/hyprlogi-pkg && cd ~/.cache/hyprlogi-pkg
+curl -LO https://github.com/mfabijanic/hyprlogi/releases/latest/download/PKGBUILD
+curl -LO https://github.com/mfabijanic/hyprlogi/releases/latest/download/hyprlogi.install
+makepkg -si
 systemctl --user enable --now hyprlogi.service
-hyprlogi omarchy install        # Omarchy only: menu, hooks, profile
+hyprlogi omarchy install        # Omarchy only: menu, hooks, profile (add --plugin for the bar widget)
 ```
 
-The package installs the systemd user unit and a udev rule; it does not touch your home directory, so the two
-commands above are yours to run.
+The package installs the systemd user unit and a udev rule; it does not touch your home directory, so the last
+two commands are yours to run. Each release also has a prebuilt package for `sudo pacman -U <url>`; it is built
+for the Python of its day (see the release notes). An AUR package will follow.
+
+### Remove
+
+```sh
+hyprlogi omarchy uninstall                      # Omarchy menu entries and hooks
+systemctl --user disable --now hyprlogi.service
+sudo pacman -R hyprlogi                         # or: uv tool uninstall hyprlogi
+```
+
+Settings and profiles stay in `~/.config/hyprlogi`.
 
 ### From source
 
@@ -217,7 +234,7 @@ From a source checkout without installing: `python3 hyprlogi.py ...` (or `./hypr
 
 ### Running as a Systemd User Service (Recommended)
 
-The AUR package and `install.sh` install the unit for you. For a manual `uv tool install` / `pipx install`,
+The Arch package and `install.sh` install the unit for you. For a manual `uv tool install` / `pipx install`,
 point it at `~/.local/bin`:
 
 ```sh
@@ -261,13 +278,18 @@ uv run --no-project --with pytest python -m pytest
 
 ### Releasing
 
-The AUR package lives in [`packaging/aur/`](packaging/aur/). For a new version:
+The Arch package lives in [`packaging/aur/`](packaging/aur/). For a new version:
 
 1. Bump the version in `pyproject.toml`, `src/hyprlogi/__init__.py` and `packaging/aur/PKGBUILD` (reset `pkgrel=1`).
 2. Tag and push: `git tag vX.Y.Z && git push origin main vX.Y.Z`.
 3. In `packaging/aur/`: `updpkgsums`, `makepkg -fc` (builds and runs the tests), `namcap PKGBUILD *.pkg.tar.zst`,
-   then `makepkg --printsrcinfo > .SRCINFO`.
-4. Copy `PKGBUILD`, `.SRCINFO` and `hyprlogi.install` into the AUR repository
+   then `makepkg --printsrcinfo > .SRCINFO`; commit and push the checksum.
+4. Publish a GitHub release with the package, the wheel (`dist/` in the makepkg build), `PKGBUILD`,
+   `hyprlogi.install` and `SHA256SUMS`:
+   `gh release create vX.Y.Z --verify-tag --notes-file NOTES.md <files>`.
+   Keep the names `PKGBUILD` and `hyprlogi.install`: the install instructions download them from
+   `releases/latest/download/`.
+5. Once an AUR account is possible: copy `PKGBUILD`, `.SRCINFO` and `hyprlogi.install` into the AUR repository
    (`git clone ssh://aur@aur.archlinux.org/hyprlogi.git`), commit and push.
 
 ## Acknowledgements
